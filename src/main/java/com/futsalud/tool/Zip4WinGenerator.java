@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class Zip4WinGenerator {
 
-    public static int generate(final String zipFileName, final char[] password, ImmutableList<Zip4WinFileEntity> fileList) {
+    public static int generate(final String zipFileName, final char[] password, ImmutableList<File> fileList) {
 
         try {
             ZipFile zipFile = new ZipFile(zipFileName);
@@ -29,13 +29,7 @@ public class Zip4WinGenerator {
                 params.setPassword(password);
             }
 
-            MutableList<File> files = Lists.mutable.empty();
-            fileList.each(fileEntity -> {
-                final String filename = fileEntity.getFilePath()
-                        + System.getProperty("file.separator") + fileEntity.getFineName();
-                files.add(new File(filename));
-            });
-            zipFile.addFiles(new ArrayList<File>(files.toList()), params);
+            zipFile.addFiles(new ArrayList<File>(fileList.toList()), params);
         } catch (Exception e) {
             e.printStackTrace();
             return 1;
