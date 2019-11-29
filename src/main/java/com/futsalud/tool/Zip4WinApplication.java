@@ -24,9 +24,6 @@ public class Zip4WinApplication implements ActionListener {
 
     private JFrame frame;
     private JPanel mainPane;
-    private JPanel headPane;
-    private JPanel bodyPane;
-    private JPanel footPane;
 
     private JButton btnAddFiles;
     private JButton btnExecute;
@@ -47,9 +44,9 @@ public class Zip4WinApplication implements ActionListener {
     private void execute() {
 
         mainPane = new JPanel(new BorderLayout());
-        headPane = new JPanel(new BorderLayout());
-        bodyPane = new JPanel(new BorderLayout());
-        footPane = new JPanel();
+        JPanel headPane = new JPanel(new BorderLayout());
+        JPanel bodyPane = new JPanel(new BorderLayout());
+        JPanel footPane = new JPanel();
 
         frame = new JFrame();
 
@@ -167,6 +164,7 @@ public class Zip4WinApplication implements ActionListener {
             model = new DefaultTableModel(new String[][]{}, tableLabel);
             table.setModel(model);
         } else if (e.getSource().equals(btnExecute)) {
+            // バリデーション
             ImmutableList<String> errors = validator();
             if (errors.size() != 0) {
                 JOptionPane.showMessageDialog(
@@ -177,25 +175,42 @@ public class Zip4WinApplication implements ActionListener {
             }
             int ret = chooserSave.showDialog(mainPane, "保存");
             if (ret == JFileChooser.APPROVE_OPTION) {
-                File file = chooserSave.getSelectedFile();
-                if (file.exists()) {
-                    ret = JOptionPane.showConfirmDialog(mainPane, "上書きか確認",
-                            chooserSave.getSelectedFile().getName() + "は既に存在しています。上書きしてよろしいですか？",
-                            JOptionPane.YES_NO_OPTION);
-                    if (ret != JOptionPane.YES_OPTION) {
+                File saveFile = chooserSave.getSelectedFile();
+                if (saveFile.exists()) {
+                    ret = JOptionPane.showConfirmDialog(mainPane, "は既に存在しています。上書きしてよろしいですか？",
+                            chooserSave.getSelectedFile().getName() + "上書き確認メッセージ",
+                            JOptionPane.OK_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE);
+                    if (ret == JOptionPane.CANCEL_OPTION) {
                         return;
                     }
                 }
-                MutableList<Zip4WinFileEntity> fileList = Lists.mutable.empty();
-                for (int i = 0; i < model.getRowCount(); i++) {
-                    fileList.add(new Zip4WinFileEntity(
-                            model.getValueAt(i, 0).toString(),
-                            model.getValueAt(i, 1).toString()));
-                }
-                String filename = file.getPath();
+                String filename = saveFile.getPath();
                 if (!filename.endsWith(".zip")) {
                     filename = filename + ".zip";
                 }
+
+                long totalFileSIze = 0;
+                MutableList<File> fileList = Lists.mutable.empty();
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    final File file = new File(model.getValueAt(i, 0).toString()
+                            + System.getProperty("file.separator")
+                            + model.getValueAt(i, 1).toString());
+                    fileList.add(file);
+                    totalFileSIze = totalFileSIze + file.length();
+                }
+                // 警告（圧縮前合計サイズが100MB趙）
+                if (totalFileSIze > (1024 * 1024 * 100)) {
+                    ret = JOptionPane.showConfirmDialog(mainPane,
+                            "対象ファイルサイズの合計が100MBを超えています。圧縮しますか？",
+                            "警告メッセージ",
+                            JOptionPane.OK_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE);
+                    if (ret == JOptionPane.CANCEL_OPTION) {
+                        return;
+                    }
+                }
+
                 ret = Zip4WinGenerator.generate(filename, txtPassword.getPassword(), fileList.toImmutable());
                 if (ret != 0) {
                     JOptionPane.showMessageDialog(
@@ -226,6 +241,7 @@ public class Zip4WinApplication implements ActionListener {
         if (model.getRowCount() == 0) {
             errors.add("対象ファイルを追加してください");
         }
+
         return errors.toImmutable();
     }
 
@@ -235,13 +251,13 @@ public class Zip4WinApplication implements ActionListener {
         final String size;
         if (file.length() > (1024 * 1024 * 1024)) {
             size = String.format("%1$.2fGB", BigDecimal.valueOf(file.length()).divide(
-                    BigDecimal.valueOf(1024 * 1024 * 1024), 2).setScale(2, RoundingMode.HALF_UP));
+                    BigDecimal.valueOf(1024 * 1024 * 1024), 2, RoundingMode.HALF_UP));
         } else if (file.length() > 1024 * 1024) {
             size = String.format("%1$.2ffMB", BigDecimal.valueOf(file.length()).divide(
-                    BigDecimal.valueOf(1024 * 1024), 2).setScale(2, RoundingMode.HALF_UP));
+                    BigDecimal.valueOf(1024 * 1024), 2, RoundingMode.HALF_UP));
         } else if (file.length() > 1024) {
             size = String.format("%1$.2fKB", BigDecimal.valueOf(file.length()).divide(
-                    BigDecimal.valueOf(1024), 2).setScale(2, RoundingMode.HALF_UP));
+                    BigDecimal.valueOf(1024), 2, RoundingMode.HALF_UP));
         } else {
             size = String.format("%dB", file.length());
         }
