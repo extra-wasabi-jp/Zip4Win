@@ -35,6 +35,7 @@ public class Zip4WinApplication implements ActionListener {
     private JPasswordField txtPassword;
     private JPasswordField txtPasswordConfirm;
 
+    private JCheckBox chkForWindows;
 
     private JTable table;
 
@@ -52,6 +53,8 @@ public class Zip4WinApplication implements ActionListener {
 
         txtPassword = new JPasswordField(12);
         txtPasswordConfirm = new JPasswordField(12);
+
+        chkForWindows = new JCheckBox("for Win");
 
         btnAddFiles = new JButton("追加");
         btnAddFiles.addActionListener(this);
@@ -121,6 +124,7 @@ public class Zip4WinApplication implements ActionListener {
         headCenterChild.add(txtPasswordConfirm);
 
 
+        headEastPane.add(chkForWindows);
         headEastPane.add(btnAddFiles);
         headEastPane.add(btnClear);
         headEastPane.add(btnExecute);
@@ -211,7 +215,12 @@ public class Zip4WinApplication implements ActionListener {
                     }
                 }
 
-                ret = Zip4WinGenerator.generate(filename, txtPassword.getPassword(), fileList.toImmutable());
+                ret = Zip4WinGenerator.generate(
+                        filename,
+                        this.chkForWindows.isSelected(),
+                        txtPassword.getPassword(),
+                        fileList.toImmutable()
+                );
                 if (ret != 0) {
                     JOptionPane.showMessageDialog(
                             mainPane, "エラーが発生しました", "システムエラー",
